@@ -24,6 +24,9 @@ let client_id = process.env.CLIENT_ID
 let hostname_server = process.env.HOSTNAME
 let port_server = process.env.PORT
 let private_key_file = null;
+let config_file = 'config.json';
+
+
 
 open ('https://sandbox-business.revolut.com/app-confirm?client_id='+client_id+'&redirect_uri=http://'+hostname_server+':'+port_server, {app: 'firefox'});
 
@@ -38,8 +41,6 @@ try {
     console.error(err)
     process.exit(1);
   }
-
-  listAccounts ()
 
 app.get('/', function(req, res, next) {
     code = req.query.code
@@ -56,6 +57,11 @@ app.get('/', function(req, res, next) {
     console.log('app is listening on port ' + port_server);
   });
 
+/**
+ * Generate a token
+ * return token
+*/
+
 function generateToken (){
     const issuer = hostname_server
     const aud = 'https://revolut.com' // Constant
@@ -69,6 +75,13 @@ function generateToken (){
     return token;
 }
 
+/**
+ * Send a https request
+ * 
+ * @param data
+ * @param options : request options
+ * @param response : res
+*/
 function sendRequest (data, options, response){
     const req = https.request(options, (res) => {
     console.log(`statusCode: ${res.statusCode}`)
@@ -79,7 +92,7 @@ function sendRequest (data, options, response){
                     response.json ({success: true, response: d.toString()})
                 }
                 console.log (d.toString())
-                //overwriteConfFile(d.toString(), Date.now(), Date.now())
+                overwriteConfFile(JSON.parse(d.toString()))
             } else {
                 if (typeof response !== 'undefined'){
                     response.json ({success: false, error: 'A problem has occurred', code: d})
@@ -149,5 +162,27 @@ function listAccounts () {
       sendRequest(data, options)
 }
 
+function overwriteConfFile(data_json) {
+    try {
+      if (fs.existsSync(config_file)) {
+        let data = JSON.parse (fs.readFileSync(config_file).toString());
+        if (typeof data_json.access_token !== undefined){
+            data.access_token = data_json.access_token
+            data.last_refresh_date = Date.now()
+        } 
+        
+        if (typeof data_json.refresh_token !== undefined){
+            data.refresh_token = data_json.refresh_token
+            data.last_refresh_date = Date.now()
+            data.last_authorisation_date = Date.now()
+        }
 
-  
+        fs.writeFile(config_file, JSON.stringify(data), function (err) {
+            if (err) throw err;
+            console.log('Config file is successfully.');
+          });
+      }
+    } catch(err) {
+      console.error(err)
+    }
+} 
