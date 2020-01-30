@@ -24,6 +24,14 @@ git clone https://github.com/mehdi-bouziane/revolut-api-test.git
 
 - copy and rename the .env.default file to .env and add the parameters
 
+exemple :
+```
+HOSTNAME=127.0.0.1
+PORT=3000
+PRIVATE_KEY_PATH=/home/user/YOUR FILE
+CLIENT_ID=YOUR CLIENT ID
+```
+
 - install the project packages
 ```console
 npm install
